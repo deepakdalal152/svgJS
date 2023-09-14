@@ -11,11 +11,11 @@ const Tree = () =>{
     }
     // console.log(data)
 
-    async function branch(parent, len, angle, data) {
+    async function branch(parent, len, angle) {
         // console.log(data.name)
-        for (const item of data) {
+        // for (const item of data) {
             const strokeWidth = len > 25 ? (len - 25) / 18 : 0.2;
-            console.log(strokeWidth,item.name)
+            console.log(strokeWidth,)
             // const lines = parent.line(0, 0, 0, 0).stroke({ width: strokeWidth, color: "red" })
             const startX = 0
             const startY = 0
@@ -35,7 +35,7 @@ const Tree = () =>{
 
             })
 
-            // if (len >= 10) {
+            if (len >= 10) {
                 const leftLine = parent.group()
                 const rightLine = parent.group()
 
@@ -48,22 +48,23 @@ const Tree = () =>{
                 parent.add(leftLine)
                 parent.add(rightLine)
 
-            parent.circle(strokeWidth + 5).center(0, 0 - len)
+            // parent.circle(strokeWidth + 5).center(0, 0 - len)
             setAngle(-angle)
                 await Promise.all([
-                    console.log(item.children,angle),
-                    item.children && branch(leftLine, Math.floor(len * .71), Math.floor(angle * .81),item.children)])
-            // }
-            // else {
-            //     const r = Math.floor(Math.random() * 255);
-            //     const g = Math.floor(Math.random() * 255);
-            //     const b = Math.floor(Math.random() * 255);
-            //     const x = "rgb(" + r + "," + g + "," + b + ")";
-            //     parent.circle(strokeWidth + 5).center(0, 0 - len).fill(x)
-            //     parent.text(item.name).x(0).y(0 - len - 10).font({ size: 12, anchor: "middle" })
+                    branch(rightLine, Math.floor(len * .71), Math.floor(angle * .81), parent),
+                    branch(leftLine, Math.floor(len * .61), Math.floor(angle * .91), parent)])
+                
+            }
+            else {
+                const r = Math.floor(Math.random() * 255);
+                const g = Math.floor(Math.random() * 255);
+                const b = Math.floor(Math.random() * 255);
+                const x = "rgb(" + r + "," + g + "," + b + ")";
+                parent.circle(strokeWidth + 5).center(0, 0 - len).fill(x)
+                // parent.text(item.name).x(0).y(0 - len - 10).font({ size: 12, anchor: "middle" })
             
-            // }
-        }
+            }
+        // }
 
     }
 
