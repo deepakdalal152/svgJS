@@ -1,57 +1,74 @@
 import { SVG } from "@svgdotjs/svg.js";
 import React, { useEffect, useRef, useState } from 'react';
 
-const Tree = () => {
-  const svgRef = useRef(null);
-  const [angle, setAngle] = useState(Math.PI * 10);
 
-  useEffect(() => {
-    const canvasWidth = window.innerWidth;
-    const canvasHeight = window.innerHeight;
-
-    const draw = SVG().addTo(svgRef.current);
-    draw.size("100%", "100%");
-
-    function branch(parent, len) {
-      const strokeWidth = len > 25 ? (len - 25) / 18 : 0.2;
-      const line = parent.line(0, 0, 0, -len).stroke({ width: strokeWidth, color: "Brown" });
-
-      if (len >= 25) {
-        const leftBranch = parent.group();
-        const rightBranch = parent.group();
-
-        leftBranch.translate(0, -len);
-        rightBranch.translate(0, -len);
-
-        // leftBranch.add(line.clone()); // Clone the line to prevent multiple rotations
-        // rightBranch.add(line);
-
-        leftBranch.rotate(angle, 0, 0); // Rotate from the base
-        rightBranch.rotate(-angle, 0, 0); // Rotate from the base
-
-        parent.add(leftBranch);
-        parent.add(rightBranch);
-
-        branch(leftBranch, len * 0.67);
-        branch(rightBranch, len * 0.73);
-      } else {
-        // Calculate the position for the circle at the tail of the branch
-        const circleX = 0;
-        const circleY = -len;
-
-        // Add the circle at the calculated position
-        parent.circle(12).center(circleX, circleY).fill({ color: "red" }).stroke({ width: 0 });
-      }
+const Tree = () =>{
+    const svgRef = useRef(null)
+    const [angle,setAngle] = useState(24)
+    const handleChange = (e) =>{
+        setAngle(e.target.value)
     }
 
-    draw.size(canvasWidth, canvasHeight);
-    draw.viewbox(0, 0, canvasWidth, canvasHeight);
+    async function branch(parent,len){
+        const strokeWidth = len > 25 ? (len - 25) / 18 : 0.2;
+        console.log(strokeWidth)
+        const lines = parent.line(0,0,0,0).stroke({width:strokeWidth,color:"red"})
+        
+        await new Promise(resolve=>{
+            lines.animate(3000).plot(0,0,0,-len).after(resolve)
+        })
 
-    const rootBranch = draw.group().translate(canvasWidth / 2, canvasHeight);
-    branch(rootBranch, 150);
-  }, [angle]);
+        if(len >= 10){
+            const leftLine = parent.group()
+            const rightLine = parent.group()
 
-  return <div ref={svgRef} />;
-};
+            leftLine.translate(0,-len)
+            rightLine.translate(0,-len)
 
-export default Tree;
+            leftLine.rotate(-angle)
+            rightLine.rotate(angle)
+
+            parent.add(leftLine)
+            parent.add(rightLine)
+
+            // parent.circle(strokeWidth+5).center(0,0-len)
+            await Promise.all([
+                branch(leftLine,len*.75),
+                branch(rightLine,len*.65)
+            ])
+        }
+        else{
+            const r = Math.floor(Math.random() * 255);
+            const g = Math.floor(Math.random() * 255);
+            const b = Math.floor(Math.random() * 255);
+            const x ="rgb(" + r + "," + g + "," + b + ")";
+            parent.circle(strokeWidth+5).center(0,0-len).fill(x)
+            
+        }
+
+    }
+
+    useEffect(()=>{
+        const draw = SVG().addTo(svgRef.current)
+
+        const canvasWidth = window.innerWidth;
+        const canvasHeight = window.innerHeight;
+
+        draw.size(canvasWidth,canvasHeight)
+        draw.viewbox(0,0,canvasWidth,canvasHeight)
+
+        const mainBranch = draw.group().translate(canvasWidth/2,canvasHeight)
+        
+        branch(mainBranch,150)
+        // return()=>{draw.clear()}
+
+    },[])
+
+    return<>
+    <div ref={svgRef}/>
+    <input onChange={handleChange}/>
+    </>
+}
+
+
+export default Tree

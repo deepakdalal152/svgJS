@@ -1,119 +1,93 @@
 import { SVG } from "@svgdotjs/svg.js";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
+import {data} from "../data/data"
 
-const Tree = () => {
-  const svgRef = useRef(null);
-  const [angle, setAngle] = useState(Math.PI * 50);
-  const [expandedBranch, setExpandedBranch] = useState(null);
 
-  useEffect(() => {
-    const canvasWidth = window.innerWidth;
-    const canvasHeight = window.innerHeight;
+const Tree = () =>{
+    const svgRef = useRef(null)
+    const [angle,setAngle] = useState(45)
+    const handleChange = (e) =>{
+        setAngle(e.target.value)
+    }
+    // console.log(data)
 
-    const draw = SVG().addTo(svgRef.current);
-    draw.size("100%", "100%");
+    async function branch(parent, len, angle, data) {
+        // console.log(data.name)
+        for (const item of data) {
+            const strokeWidth = len > 25 ? (len - 25) / 18 : 0.2;
+            console.log(strokeWidth,item.name)
+            // const lines = parent.line(0, 0, 0, 0).stroke({ width: strokeWidth, color: "red" })
+            const startX = 0
+            const startY = 0
+            const endX = 0
+            let endY = 0
+            const lines = parent.path(`M${startX},${startY} C${startX + 5 * strokeWidth},${startY - 5 * strokeWidth} ${endX - 5 * strokeWidth},${endY + 5 * strokeWidth} ${endX},${endY}`)
+                .fill('none')
+                .stroke({ color: 'blue', width: strokeWidth })
+        
+            await new Promise(resolve => {
+                // lines.animate(3000).plot(0,0,0,-len).after(resolve)
+                endY = -len
+                const initialD = lines.attr('d');
+                const finalD = `M${startX},${startY} C${startX + 5 * strokeWidth},${startY - 5 * strokeWidth} ${endX - 5 * strokeWidth},${endY + 5 * strokeWidth} ${endX},${endY}`;
+                // lines.animate(1000).attr({ d: finalD });
+                lines.animate(1000, '<>', 0).plot(finalD).after(resolve)
 
-    function branch(parent, len, levels, branchData, isExpanded, subBranch) { // Add 'subBranch' as a parameter
-      const strokeWidth = len > 25 ? (len - 25) / 18 : 0.2;
-      const line = parent.line(0, 0, 0, -len).stroke({ width: strokeWidth, color: "Brown" });
+            })
 
-      if (levels.length > 0) {
-        const currentLevel = levels[0];
-        const currentBranchData = branchData[0];
+            // if (len >= 10) {
+                const leftLine = parent.group()
+                const rightLine = parent.group()
 
-        if (currentLevel > 0 && Array.isArray(currentBranchData) && currentBranchData.length > 0) {
-          const angleIncrement = Math.PI * 2 / currentBranchData.length;
+                leftLine.translate(0, -len)
+                rightLine.translate(0, -len)
 
-          for (let i = 0; i < currentBranchData.length; i++) {
-            subBranch = parent.group(); // Update 'subBranch' inside the loop
-            subBranch.translate(0, -len);
-            subBranch.rotate(angleIncrement * i, 0, 0);
-            parent.add(subBranch);
+                leftLine.rotate(-angle)
+                rightLine.rotate(angle)
 
-            const isChildExpanded = isExpanded && expandedBranch === currentBranchData[i];
-            branch(subBranch, len * 0.67, levels.slice(1), currentBranchData[i], isChildExpanded, subBranch);
-          }
-        } else if (currentLevel === 0) {
-          // Village level, draw circles
-          if (Array.isArray(currentBranchData)) {
-            for (let i = 0; i < currentBranchData.length; i++) {
-              const circleX = 0;
-              const circleY = -len + (i * 20); // Adjust vertical position for multiple circles
-              const population = currentBranchData[i];
-              const circleColor = getColorByPopulation(population);
-              subBranch.circle(12).center(circleX, circleY).fill({ color: circleColor }).stroke({ width: 0 });
-            }
-          }
+                parent.add(leftLine)
+                parent.add(rightLine)
+
+            parent.circle(strokeWidth + 5).center(0, 0 - len)
+            setAngle(-angle)
+                await Promise.all([
+                    console.log(item.children,angle),
+                    item.children && branch(leftLine, Math.floor(len * .71), Math.floor(angle * .81),item.children)])
+            // }
+            // else {
+            //     const r = Math.floor(Math.random() * 255);
+            //     const g = Math.floor(Math.random() * 255);
+            //     const b = Math.floor(Math.random() * 255);
+            //     const x = "rgb(" + r + "," + g + "," + b + ")";
+            //     parent.circle(strokeWidth + 5).center(0, 0 - len).fill(x)
+            //     parent.text(item.name).x(0).y(0 - len - 10).font({ size: 12, anchor: "middle" })
+            
+            // }
         }
-      }
+
     }
 
-    // Define a function to determine circle color based on population
-    function getColorByPopulation(population) {
-      // You can customize the color logic based on population ranges
-      if (population >= 1000) {
-        return "red"; // High population, red
-      } else if (population >= 500) {
-        return "blue"; // Medium population, blue
-      } else {
-        return "green"; // Low population, green
-      }
-    }
+    useEffect(()=>{
+        const draw = SVG().addTo(svgRef.current)
 
-    draw.size(canvasWidth, canvasHeight);
-    draw.viewbox(0, 0, canvasWidth, canvasHeight);
+        const canvasWidth = window.innerWidth;
+        const canvasHeight = window.innerHeight;
 
-    const rootBranch = draw.group().translate(canvasWidth / 2, canvasHeight);
-    // Define the number of branches for each level: Earth -> Continents -> Countries -> States -> Districts -> Villages
-    const levels = [1, 5, 3, 2, 4]; // Example: 1 Earth, 5 Continents, 3 Countries, 2 States, 4 Districts
-    const branchData = [
-      [ // Earth
-        [ // Continent 1
-          [ // Country 1
-            [ // State 1
-              [ // District 1
-                150,  // Population for Village 1
-                220,  // Population for Village 2
-              ],
-              [ // District 2
-                300,  // Population for Village 1
-              ],
-            ],
-            [ // State 2
-              [ // District 1
-                450,  // Population for Village 1
-                600,  // Population for Village 2
-                750,  // Population for Village 3
-              ],
-            ],
-          ],
-          [ // Country 2
-            [ // State 3
-              [ // District 1
-                800,  // Population for Village 1
-              ],
-            ],
-          ],
-        ],
-        [ // Continent 2
-          // Add more countries, states, districts, and villages data here
-        ],
-        // Add more continents and their data here
-      ],
-    ];
+        draw.size(canvasWidth,canvasHeight)
+        draw.viewbox(0,0,canvasWidth,canvasHeight)
 
-    // Only show the default number of branches (3) at the root level
-    const defaultBranchData = branchData[0].slice(0, 3);
-    branch(rootBranch, 150, levels, defaultBranchData, true, null); // Initialize 'subBranch' as null
+        const mainBranch = draw.group().translate(canvasWidth/2,canvasHeight)
+        
+        branch(mainBranch,150,angle,[data])
+        // return()=>{draw.clear()}
 
-  }, [angle, expandedBranch]);
+    },[])
 
-  return (
-    <div>
-      <button onClick={() => setExpandedBranch(null)}>Reset</button>
-      <div ref={svgRef} />
-    </div>
-  );
-};
+    return<>
+    <div ref={svgRef}/>
+    <input onChange={handleChange}/>
+    </>
+}
 
-export default Tree;
+
+export default Tree
